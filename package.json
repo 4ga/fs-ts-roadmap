@@ -1,0 +1,23 @@
+{
+  "name": "fs-ts-roadmap",
+  "private": "true",
+  "version": "1.0.0",
+  "description": "",
+  "workspaces": [
+    "packages/*"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "npm -ws test",
+    "test:watch": "npm -ws run test:watch",
+    "dev": "npm -w @fs/p01 run dev",
+    "dev:p01": "npm -w @fs/p01 run dev",
+    "dev:p02": "npm -w @fs/p02 run dev",
+    "build": "npm -ws run build",
+    "lint": "npm -ws run lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
