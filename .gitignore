@@ -25,4 +25,6 @@ dist-ssr
 *.db
 .env
 .env.test
+.env.*
+!.env.example
 .config
