@@ -1,14 +1,25 @@
-# P03 — Env Config + Fail-Fast (Express + Zod + dotenv)
+# P04 — Logging + Request ID (Express + TS + Tests)
 
-Centralize configuration in `src/config.ts` and validate environment variables on startup (12-factor config). The app must **fail fast** if required env vars are missing/invalid.
+Structured JSON logging + request correlation for an Express + TypeScript service.
 
 ## What this project demonstrates
 
-- Loads `.env` in **development** only (`dotenv`)
-- Validates env vars with **Zod**
-- Exports a typed `Config` shape
-- Fails fast on invalid/missing env (server does not start)
-- Unit tests cover valid + invalid env parsing and defaults
+- `requestId()` middleware:
+  - Uses inbound `x-request-id` if present; otherwise generates one
+  - Attaches `req.requestId`
+  - Always sets response header `x-request-id`
+
+- Structured JSON logger:
+  - Single-line JSON output
+  - Deterministic via injectable `write()` and `now()` (tested)
+
+- `httpLogger()` middleware:
+  - Logs once at end of request (`finish`)
+  - Includes: `level`, `msg`, `time`, `requestId`, `method`, `path`, `status`, `durationMs`
+
+- Redaction:
+  - Secrets are redacted in logs (case-insensitive keys)
+  - Works for nested objects/arrays
 
 ## Requirements
 
@@ -21,85 +32,79 @@ Centralize configuration in `src/config.ts` and validate environment variables o
 npm install
 ```
 
-## Environment variables
-
-Create a .env file for local development.
-
-## Required
-
-- DATABASE_URL — non-empty string (required)
-
-## Optional (with defaults)
-
-- NODE_ENV — development | test | production (default: development)
-
-- PORT — integer 1–65535 (default: 3000)
-
-## Local setup
-
-Copy the example file and adjust as needed:
-
-```bash
-cp .env.example .env
-```
-
-Example .env
-
-```env
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgres://user:pass@localhost:5432/db
-```
-
-### Run (development)
-
-```bash
-npm run dev
-```
-
-#### Notes:
-
-- In `development`, `.env` is loaded automatically.
-- In `test/production`, `.env` is not loaded; you must provide env vars the environment.
-
 ### Run tests
 
 ```bash
 npm test
 ```
 
-### Fail-fast behavior
+### Request ID
 
-The server loads configuration at startup:
+- If client sends `x-request-id`, server echoes the same value back.
+- If omitted, server generates one and returns it in `x-request-id`.
 
-- If env vars are valid: the server starts and listens on `config.PORT`.
-- If env vars are invalid/missing: config validation fails and the process throws before the server starts.
+##### Example:
 
-### Project structure
+```bash
+curl -i http://localhost:3000/ok \
+  -H "x-request-id: test-id-123"
+```
+
+### Sample log line
+
+#### Example `httpLogger` output (single line JSON):
+
+```json
+{
+  "level": "info",
+  "msg": "http request",
+  "time": "2000-01-01T00:00:00.000Z",
+  "requestId": "test-id-123",
+  "method": "GET",
+  "path": "/ok",
+  "status": 200,
+  "durationMs": 3,
+  "headers": { "authorization": "[REDACTED]", "cookie": "[REDACTED]" }
+}
+```
+
+### Reaction rules
+
+##### Keys are matched case-insensitively and redacted anywhere in the logged object:
+
+- `authorization`
+- `cookie`
+- `set-cookie`
+- `password`
+- `token`
+- `accessToken`
+- `refreshToken`
+
+##### Redacted values become: `"[REDACTED]".`
+
+### Project Structure
 
 ```text
 src/
-  app.ts        # Express app wiring (no dotenv, no process.env usage)
-  config.ts     # Env schema + parsing + dev dotenv loading
-  server.ts     # Startup entry (calls loadConfig() and starts the server)
+  app.ts                      # Express app wiring
+  appLogger.ts                # Production logger instance (stdout + real time)
+  logger.ts                   # createLogger() + redact()
+  middleware/
+    requestId.ts              # request correlation middleware
+    httpLogger.ts             # request logging middleware (logs on finish)
+    errorLogger.ts            # error logging middleware (logs + passes through)
+  types/
+    express.d.ts              # adds req.requestId typing
 tests/
-  config.test.ts # Unit tests for env parsing + defaults + invalid cases
-.env.example
+  requestId.int.test.ts
+  logger.unit.test.ts
+  httpLogger.int.test.ts
+  errorLogger.int.test.ts
+
 ```
 
 ### Standards
 
-- Avoid raw `process.env.*` usage outside `src/config.ts`.
-- Keep tests deterministic (no reliance on machine env).
-- Validation failures should be handled by config on startup (fail-fast).
-
-````bash
-
-And make sure you also have this file in the same folder:
-
-**`packages/p03/.env.example`**
-```env
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgres://user:pass@localhost:5432/db
-````
+- No `console.log` in app code (use the logger)
+- Tests are deterministic (fixed time, no timing assertions)
+- Errors keep the standard response shape {"error": "string"} (no stack leaks)
