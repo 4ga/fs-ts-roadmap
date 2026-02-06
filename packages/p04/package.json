@@ -1,8 +1,11 @@
 {
-  "name": "p04",
+  "name": "@fs/p04",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "test": "vitest",
