@@ -14,6 +14,7 @@
     "dev:p01": "npm -w @fs/p01 run dev",
     "dev:p02": "npm -w @fs/p02 run dev",
     "dev:p03": "npm -w @fs/p03 run dev",
+    "dev:p04": "npm -w @fs/p04 run dev",
     "build": "npm -ws run build",
     "lint": "npm -ws run lint"
   },
