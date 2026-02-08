@@ -62,7 +62,7 @@ export function widgetsRouter(deps: WidgetDeps) {
       const { id } = req.validated.params as { id: string };
       const { name } = req.validated.body as { name: string };
       const updated = store.update(id, name);
-      if (!updated) return res.status(404).json({ error: "Not found" });
+      if (!updated) return res.status(404).json({ error: "Not Found" });
       return res.status(200).json(updated);
     },
   );
