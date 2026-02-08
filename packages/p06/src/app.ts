@@ -2,6 +2,7 @@ import express from "express";
 import { requestId } from "./middleware/requestId";
 import { errorHandler } from "./middleware/errorHandler";
 import { notFound } from "./middleware/notFound";
+import { widgetsRouter } from "./widgets/widgets.router";
 
 export type AppDeps = {
   idGen: { nextId: () => string };
@@ -16,7 +17,7 @@ export function createApp(deps: AppDeps) {
   app.use(requestId());
 
   // routes
-  // app.use("/widgets", widgetsRouter({idGen: deps.idGen, clock: deps.clock}))
+  app.use("/widgets", widgetsRouter({ idGen: deps.idGen, clock: deps.clock }));
 
   app.use(notFound);
   app.use(errorHandler);
