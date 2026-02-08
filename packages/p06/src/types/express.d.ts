@@ -2,7 +2,7 @@ declare global {
   namespace Express {
     interface Request {
       requestId?: string;
-      validated?: {
+      validated: {
         body?: unknown;
         params?: unknown;
         query?: unknown;

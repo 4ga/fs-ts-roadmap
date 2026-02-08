@@ -22,10 +22,8 @@ export function widgetsRouter(deps: WidgetDeps) {
     "/",
     validate({ body: createWidgetBodySchema }),
     (req: Request, res: Response) => {
-      // if validate() overwrites req.body, name is already trimmed & validated
-      const { name } = req.body as { name: string };
+      const { name } = req.validated.body as { name: string };
       const created = store.create(name);
-
       return res.status(201).json(created);
     },
   );
@@ -35,13 +33,12 @@ export function widgetsRouter(deps: WidgetDeps) {
     "/",
     validate({ query: listWidgetsQuerySchema }),
     (req: Request, res: Response) => {
-      const { limit, offset } = req.query as any;
-      const result = store.list({ limit, offset });
-      if (result)
-        return res
-          .status(200)
-          .json({ item: result.items, limit, offset, total: result.total });
-      return res.status(501).json({ error: "Not Implemented" });
+      const { limit, offset } = req.validated.query as unknown as {
+        limit: number;
+        offset: number;
+      };
+      const { items, total } = store.list({ limit, offset });
+      return res.status(200).json({ items, limit, offset, total });
     },
   );
 
@@ -50,11 +47,10 @@ export function widgetsRouter(deps: WidgetDeps) {
     "/:id",
     validate({ params: widgetIdParamsSchema }),
     (req: Request, res: Response) => {
-      const { id } = req.params as { id: string };
-      const { name } = req.body as { name: string };
-      const updated = store.update(id, name);
-      if (!updated) return res.status(404).json({ error: "Not Found" });
-      return res.status(501).json({ error: "Not Implemented" });
+      const { id } = req.validated.params as { id: string };
+      const found = store.get(id);
+      if (!found) return res.status(404).json({ error: "Not Found" });
+      return res.status(200).json(found);
     },
   );
 
@@ -63,15 +59,11 @@ export function widgetsRouter(deps: WidgetDeps) {
     "/:id",
     validate({ params: widgetIdParamsSchema, body: updateWidgetBodySchema }),
     (req: Request, res: Response) => {
-      const { id } = req.params as { id: string };
-      const { name } = req.body as { name: string };
+      const { id } = req.validated.params as { id: string };
+      const { name } = req.validated.body as { name: string };
       const updated = store.update(id, name);
-      if (!updated) {
-        return res.status(404).json({ error: "Not found" });
-      } else if (updated) {
-        return res.status(200).json(updated);
-      }
-      return res.status(501).json({ error: "Not Implemented" });
+      if (!updated) return res.status(404).json({ error: "Not found" });
+      return res.status(200).json(updated);
     },
   );
 
@@ -80,14 +72,10 @@ export function widgetsRouter(deps: WidgetDeps) {
     "/:id",
     validate({ params: widgetIdParamsSchema }),
     (req: Request, res: Response) => {
-      const { id } = req.params as { id: string };
+      const { id } = req.validated.params as { id: string };
       const ok = store.remove(id);
-      if (!ok) {
-        return res.status(404).json({ error: "Not Found" });
-      } else if (ok) {
-        return res.status(204).end();
-      }
-      return res.status(501).json({ error: "Not Implemented" });
+      if (!ok) return res.status(404).json({ error: "Not Found" });
+      return res.status(204).end();
     },
   );
   return router;

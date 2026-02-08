@@ -9,6 +9,7 @@ type Schemas = {
 
 export function validate(schemas: Schemas): RequestHandler {
   return (req, res, next) => {
+    req.validated = {};
     const validated: { body?: unknown; params?: unknown; query?: unknown } = {};
 
     if (schemas.body) {
@@ -33,7 +34,6 @@ export function validate(schemas: Schemas): RequestHandler {
     }
 
     req.validated = validated;
-
     next();
   };
 }
